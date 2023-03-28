@@ -11,9 +11,9 @@ arr = array.create();
 var = 1;
 num_elements = 16;
 for idx = 1:num_elements
-    x = gauss_rv(0,var);
-    y = gauss_rv(0,var) * 1;
-    z = gauss_rv(0,var);
+    x = sqrt(var) * randn();
+    y = sqrt(var) * randn();
+    z = sqrt(var) * randn();
     arr.add_element(x,y,z);
 end
 
