@@ -13,26 +13,26 @@ N = num_rows * num_cols;
 % 2. Get the array response vector in some direction (az-el).
 % -------------------------------------------------------------------------
 az_deg = 15;
+el_deg = 0;
 az = az_deg * pi / 180;
-el = 0;
+el = el_deg * pi / 180;
 a = upa.get_array_response(az,el)
 
 %% ------------------------------------------------------------------------
 % 3. Create beamforming weights.
 % -------------------------------------------------------------------------
-w = ones(N,1);
+% w = ones(N,1);
 w = conj(a);
 w.' * a
 
 %% -------------------------------------------------------------------------
-% 4. Evaluate beamforming gain with these weights.
+% 4. Set weights and evaluate beamforming gain in some direction.
 % -------------------------------------------------------------------------
-az_deg = 30;
+az_deg = 15;
+el_deg = 0;
 az = az_deg * pi / 180;
-el_deg = 30;
 el = el_deg * pi / 180;
 a = upa.get_array_response(az,el);
-w = conj(a);
 g = w.' * a;
 abs(g)
 
@@ -44,7 +44,6 @@ upa.show_array_pattern_azimuth();
 upa.show_polar_array_pattern_azimuth();
 
 %% -------------------------------------------------------------------------
-% 5. Plot the radiation pattern (array pattern in 3-D).
+% 6. Plot the radiation pattern (array pattern in 3-D).
 % -------------------------------------------------------------------------
-upa.show_radiation_pattern([],'high',false);
-export_fig(['main_example_02_upa_beam_' num2str(N)],'-pdf','-transparent');
+upa.show_radiation_pattern([],'high');

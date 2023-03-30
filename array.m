@@ -963,7 +963,9 @@ classdef array < matlab.mixin.Copyable
                 error('Invalid resolution specifier. Choices are: low, medium, or high.');
             end
             if nargin < 4 || isempty(full)
-                full = true;
+                full = false;
+            else
+                full = logical(full);
             end
             if full
                 lower_az = -pi;
@@ -988,6 +990,7 @@ classdef array < matlab.mixin.Copyable
             ylabel(ax,'$y$');
             zlabel(ax,'$z$');
             axis equal;
+            shading interp;
         end
         
         function show_codebook_radiation_pattern(obj,F)
