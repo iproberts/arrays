@@ -46,4 +46,5 @@ upa.show_polar_array_pattern_azimuth();
 %% -------------------------------------------------------------------------
 % 5. Plot the radiation pattern (array pattern in 3-D).
 % -------------------------------------------------------------------------
-upa.show_radiation_pattern([],'best',false);
+upa.show_radiation_pattern([],'high',false);
+export_fig(['main_example_02_upa_beam_' num2str(N)],'-pdf','-transparent');
