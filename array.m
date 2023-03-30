@@ -986,8 +986,8 @@ classdef array < matlab.mixin.Copyable
             [AoA_ele_rad,AoA_azi_rad] = meshgrid(AoA_ele_rad,AoA_azi_rad);
             [x,y,z] = sph2cart(AoA_azi_rad,AoA_ele_rad,G);
             surf(ax,x,y,z,sqrt(x.^2+y.^2+z.^2));
-            xlabel(ax,'$x$');
-            ylabel(ax,'$y$');
+            xlabel(ax,'$y$');
+            ylabel(ax,'$x$');
             zlabel(ax,'$z$');
             axis equal;
             shading interp;
