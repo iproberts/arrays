@@ -922,7 +922,13 @@ classdef array < matlab.mixin.Copyable
             %
             % Usage:
             %  SHOW_RADIATION_PATTERN()
-            %  SHOW_RADIATION_PATTERN(res)
+            %  SHOW_RADIATION_PATTERN(ax)
+            %  SHOW_RADIATION_PATTERN(ax,res)
+            %  SHOW_RADIATION_PATTERN(ax,res,full)
+            %  SHOW_RADIATION_PATTERN([],res)
+            %  SHOW_RADIATION_PATTERN([],res,full)
+            %  SHOW_RADIATION_PATTERN([],[],full)
+            %  SHOW_RADIATION_PATTERN(ax,[],full)
             % 
             % Args:
             %  ax: (optional) axes handle to plot on; if not provided, will
@@ -980,36 +986,25 @@ classdef array < matlab.mixin.Copyable
             axis equal;
         end
         
-        function show_beam_codebook_3d(obj,F)
-            AoA_ele_rad = linspace(-pi/2,pi/2,180);
-            AoA_azi_rad = linspace(-pi/2,pi/2,180);
-            [AoA_ele_rad, AoA_azi_rad] = meshgrid(AoA_ele_rad,AoA_azi_rad);
-            AF = zeros(size(AoA_ele_rad));
-
+        function show_codebook_radiation_pattern(obj,F)
+            % SHOW_CODEBOOK_RADIATION_PATTERN Plots the array gain in a 
+            % 3-D plot for each beam in a codebook.
+            %
+            % Usage:
+            %  SHOW_CODEBOOK_RADIATION_PATTERN(F)
+            % 
+            % Args:
+            %  F: a matrix where each column is a vetor of beamforming
+            %  weights
             figure();
-            for index = 1:length(F(1,:))
-                for ele = 1:1:size(AoA_ele_rad,1)
-                    for azi = 1:1:size(AoA_azi_rad,1)
-                        % AoA_azi_deg = AoA_azi_rad(azi,ele)*180/pi;
-                        % AoA_ele_deg = AoA_ele_rad(azi,ele)*180/pi;
-                        % AF(azi,ele)= (Y*Z)*A_ML(:,index)'*array_response_UPA(AoA_azi_deg, -(AoA_ele_deg-90), Y, Z, lambda/2, lambda);
-                        % AF(azi,ele) = 10*log10(abs(AF(azi,ele))); %dB scale
-                        v = obj.get_array_response(AoA_azi_rad(azi,ele),AoA_ele_rad(azi,ele));
-                        f = F(:,index);
-                        AF(azi,ele)= abs(v.'*f)^2;
-                    end
-                end
-                [x,y,z] = sph2cart(AoA_azi_rad,AoA_ele_rad,AF);
-                surf(x,y,z,sqrt(x.^2+y.^2+z.^2));
-                hold on
-                % pause(.01)
+            ax = axes();
+            num_beams = length(F(1,:));
+            for idx = 1:num_beams
+                obj.set_weights(F(:,idx));
+                obj.show_radiation_pattern(ax,'medium',false);
+                hold(ax,'on');
             end
-            xlabel('$x$');
-            ylabel('$y$');
-            zlabel('$z$');
-            % xlim([0 70])
-            % ylim([-60 60])
-            % zlim([-60 60])
+            hold(ax,'off');
         end
         
         function [fig,ax] = show_2d(obj,ax,plane)
@@ -1082,209 +1077,5 @@ classdef array < matlab.mixin.Copyable
             fig = gcf();
         end
         
-        % -----------------------------------------------------------------
-        
-        function translate_array(obj,x,y,z)
-            obj.translate(x,y,z);
-        end
-        
-        function [A,th] = get_conjugate_beamformer_azimuth_matrix(obj,N,el)
-            % GET_PHASED_ARRAY_BEAMFORMER_MATRIX Returns a matrix whose
-            % columns are phased array beamformers in various directions of
-            % azimuth.
-            %
-            % Usage:
-            %  [A,th] = GET_PHASED_ARRAY_BEAMFORMER_AZIMUTH_MATRIX()
-            %  [A,th] = GET_PHASED_ARRAY_BEAMFORMER_AZIMUTH_MATRIX(N)
-            %  [A,th] = GET_PHASED_ARRAY_BEAMFORMER_AZIMUTH_MATRIX(N,el)
-            %
-            % Args:
-            %  N: number of beamformers to return in matrix (number of
-            %     columns in A)
-            %  el: elevation angle used when giving the azimuth conjugate
-            %      beamformer (optional, default of 0 radians)
-            % 
-            % Returns:
-            %  A: matrix of size Na-by-N whose columns are the array 
-            %     response vectors for the azimuth angles of interest at 
-            %     the fixed elevation angle
-            %  th: correpsonding azimuth angles which A is used for
-            %      estimation
-            if nargin < 2
-                N = obj.num_antennas;
-            end
-            if nargin < 3
-                el = 0;
-            end
-            th = (0:N-1).*2*pi/N - pi; % azimuth angles of interest [-pi,+pi]
-            A = zeros(obj.num_antennas,N);
-            for i = 1:N
-                w = obj.get_array_response(th(i),el); % column vector
-                A(:,i) = w;
-            end
-        end
-        
-        function set_element_gain(obj,power_gain_dB)
-            % SET_ELEMENT_GAIN Sets the gain of each element in the array.
-            % Does not account for element's radiation pattern; merely
-            % scales the isotropic pattern. Can be used when considering
-            % uniform gain over a range of directions (e.g., 3 dB gain from
-            % -60 degrees to +60 degrees).
-            %
-            % Usage:
-            %  SET_ELEMENT_GAIN(power_gain_dB)
-            %
-            % Args:
-            %  power_gain_dB: the element's power gain in dB
-            obj.element_gain_dB = power_gain_dB;
-            obj.element_gain_linear = 10^(power_gain_dB/20);
-        end
-        
-        function [xx,th] = get_element_pattern_azimuth(obj)
-            % GET_ELEMENT_PATTERN_AZIMUTH Returns the element pattern as
-            % a function of azimuth.
-            % 
-            % Usage:
-            %  [xx,th] = GET_ELEMENT_PATTERN_AZIMUTH()
-            %
-            % Returns:
-            %  xx: the element pattern as a function of azimuth angle
-            %  th: azimuth angles corresponding to the values in xx
-            %  (radians)
-            xx = obj.ep;
-            th = 1;
-        end
-        
-        function [xx,ph] = get_element_pattern_elevation(obj)
-            % GET_ELEMENT_PATTERN_ELEVATION Returns the element pattern as
-            % a function of elevation.
-            %
-            % Usage:
-            %  [xx,ph] = GET_ELEMENT_PATTERN_ELEVATION()
-            %
-            % Returns:
-            %  xx: the element pattern as a function of elevation angle
-            %  ph: elevation angles corresponding to the values in xx
-            %  (radians)
-            xx = obj.ep;
-            ph = 1;
-        end
-        
-        function v = get_near_field_response(obj,freq,x,y,z)
-            if nargin < 5
-                z = 0;
-            end
-            lambda = 3e8 / freq;
-            dx = obj.x - x / lambda;
-            dy = obj.y - y / lambda;
-            dz = obj.z - z / lambda;
-            r = sqrt(dx.^2 + dy.^2 + dz.^2); % in wavelengths
-            v = 1./r .* 1./lambda .* exp(-1j.*2*pi.*r);
-            v = v ./ norm(v,2) * sqrt(obj.num_antennas);
-        end
-        
-        function v = get_near_field_response_v2(obj,freq,x,y,z,d,eta,nu)
-            lambda = 3e8 / freq;
-            dx = obj.x - x / lambda;
-            dy = obj.y - y / lambda;
-            dz = obj.z - z / lambda;
-            r = sqrt(dx.^2 + dy.^2 + dz.^2) .* lambda; % in wavelengths
-            v = 1./(r.^nu) .* exp(-1j.*2*pi./lambda.*r.*eta);
-            % v = v .* exp(-1j.*2*pi./lambda.*(r-d).*eta);
-            v = v ./ norm(v,2) * sqrt(obj.num_antennas);
-        end
-        
-        function w = get_zero_forcing_beamformer(obj,az_des,el_des,az_int,el_int)
-            % GET_ZERO_FORCING_BEAMFORMER Returns the zero-forcing
-            % beamformer that accepts energy in one or more desired
-            % directions and rejects energy in one or more interfering
-            % directions.
-            %
-            % Usage:
-            %  w = GET_ZERO_FORCING_BEAMFORMER(az_des,el_des,az_int,el_int)
-            %
-            % Args:
-            %  az_des: desired azimuth angle(s) in radians
-            %  el_des: desired elevation angles(s) in radians
-            %  az_int: interfering azimuth angle(s) in radians
-            %  el_int: interfering elevation angle(s) in radians
-            %
-            % Returns:
-            %  w: a beamformer that attempts to accept energy in the
-            %     desired directions while rejecting energy in the
-            %     interfering directions
-            num_des = length(az_des); % number of desired directions
-            num_int = length(az_int); % number of interferer directions
-            H_des = zeros(size(obj.get_array_response(0,0)));
-            for i = 1:num_des
-                h = obj.get_array_response(az_des(i),el_des(i));
-                H_des = H_des + h; % effective desired channel
-            end
-            H_int = zeros(size(obj.get_array_response(0,0)));
-            for i = 1:num_int
-                h = obj.get_array_response(az_int(i),el_int(i));
-                H_int = H_int + h; % effective interfering channel
-            end
-            w = pinv([H_des(:), H_int(:)]);
-            w = w(1,:).'; % 1 is the index of the desired
-            w = obj.num_antennas .* w; % just so it is same gain as conjugate BF
-        end
-        
-        function show_element_pattern(obj)
-            % SHOW_ELEMENT_PATTERN Plots the element pattern as a function 
-            % of azimuth and elevation.
-            % 
-            % Usage:
-            %  SHOW_ELEMENT_PATTERN()
-            [xx,th] = obj.get_element_pattern_azimuth();
-            figure();
-            subplot(221);
-            plot(th,abs(xx),'-k'); grid on;
-            xlabel('Azimuth (rad.)');
-            ylabel('Linear Magnitude');
-            subplot(223);
-            plot(th,angle(xx),'-k'); grid on;
-            xlabel('Azimuth (rad.)');
-            ylabel('Phase (rad.)');
-            [xx,th] = obj.get_element_pattern_azimuth();
-            subplot(222);
-            plot(th,abs(xx),'-k'); grid on;
-            xlabel('Elevation (rad.)');
-            ylabel('Linear Magnitude');
-            subplot(224);
-            plot(th,angle(xx),'-k'); grid on;
-            xlabel('Elevation (rad.)');
-            ylabel('Phase (rad.)');
-        end
-                
-        function show_beam_codebook_azimuth(obj,W,el,N,full)
-            figure();
-            ax = polaraxes();
-            if nargin < 3
-                el = [];
-            end
-            if nargin < 4
-                N = [];
-            end
-            if nargin < 5
-                full = [];
-            end
-            M = length(W(1,:));
-            weights_orig = obj.weights;
-            for idx_beam = 1:M
-                obj.set_weights(W(:,idx_beam));
-                [x,th,el] = obj.get_array_pattern_azimuth(el,N,full);
-                polarplot(ax,th.',abs(x)); 
-                hold(ax,'on');
-            end
-            obj.set_weights(weights_orig);
-            % rlim(ax,[0 max(abs(x))]);
-            ax.ThetaDir = 'clockwise';
-            ax.ThetaZeroLocation = 'top';
-            ax.RAxis.Label.String = 'Linear magnitude';
-            title(ax,['Elevation of ' num2str(el*180/pi) ' deg.']);
-            thetalim(ax,[min(th)*180/pi max(th)*180/pi]);
-            hold(ax,'off');
-        end
     end
 end
