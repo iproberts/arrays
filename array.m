@@ -934,7 +934,8 @@ classdef array < matlab.mixin.Copyable
             %  ax: (optional) axes handle to plot on; if not provided, will
             %      create a new figure and axis to plot on
             %  az: (optional) a string specifying the resolution of the
-            %      plot ('low', 'medium', or 'high'); default is 'medium'.
+            %      plot ('low', 'medium', 'high', or 'best'); default is 
+            %      'medium'
             %  full: (optional) a boolean specifying if the full
             %        sweep should be executed (true) or half (false); 
             %        default is false; a full sweep is from [-pi,+pi); a 
@@ -949,12 +950,15 @@ classdef array < matlab.mixin.Copyable
             if strcmpi(res,'low') || strcmpi(res,'lo')
                 num_az = 180;
                 num_el = 90;
-            elseif strcmpi(res,'high') || strcmpi(res,'hi')
-                num_az = 720;
-                num_el = 360;
             elseif strcmpi(res,'medium') || strcmpi(res,'med')
                 num_az = 360;
                 num_el = 180;
+            elseif strcmpi(res,'high') || strcmpi(res,'hi')
+                num_az = 720;
+                num_el = 360;
+            elseif strcmpi(res,'best') || strcmpi(res,'max')
+                num_az = 1440;
+                num_el = 720;
             else
                 error('Invalid resolution specifier. Choices are: low, medium, or high.');
             end
