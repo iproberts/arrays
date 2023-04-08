@@ -258,13 +258,11 @@ classdef array < matlab.mixin.Copyable
             % Notes:
             %  : If x, y, and z are not of equal length, an error is thrown.
             if isequal(length(x),length(y)) && isequal(length(x),length(z))
-                for i = 1:length(x)
-                    obj.x = [obj.x, x(i)];
-                    obj.y = [obj.y, y(i)];
-                    obj.z = [obj.z, z(i)];
-                    obj.num_antennas = obj.num_antennas + 1;
-                    obj.weights = [obj.weights; 1];
-                end
+                obj.x = x(:).';
+                obj.y = y(:).';
+                obj.z = z(:).';
+                obj.num_antennas = length(x);
+                obj.weights = ones(length(x),1);
             else
                 error('x, y, and z must be the same length.');
             end
